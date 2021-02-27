@@ -5,13 +5,13 @@ appPath: "/app/algorithms"
 
 client:
   application: "algorithms-client"
-  image: "algorithms-client-prod"
+  image: "algorithms-client-dev"
   ingressPath: "{{ appPath }}(/|$)(.*)"
   ingressRewrite: "/$2"
 
 utility:
   application: "algorithms-utility"
-  image: "algorithms-utility-prod"
+  image: "algorithms-utility-dev"
   ingressPath: "{{ appPath }}/api(/|$)(.*)"
   ingressRewrite: "/api/$2"
   ASPNETCORE_ENVIRONMENT: "Development"

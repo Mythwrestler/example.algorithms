@@ -153,39 +153,39 @@ steps:
       event:
         - push
       branch:
-        - master
+        - dev
 
         
-  # - name: deploy-prod
-  #   image: registry.casperinc.net/plugins/ansible:3
-  #   settings:
-  #     playbook: ansible/playbook.yml
-  #     inventory: ansible/inventory/prod
-  #   environment:
-  #     k8s_cp_server:
-  #       from_secret: k8s_cp_server
-  #     k8s_cp_name:
-  #       from_secret: k8s_cp_name
-  #     k8s_cp_user:
-  #       from_secret: k8s_cp_user
-  #     k8s_cp_context:
-  #       from_secret: k8s_cp_context
-  #     k8s_cp_ca:
-  #       from_secret: k8s_cp_ca
-  #     k8s_cp_cert:
-  #       from_secret: k8s_cp_cert
-  #     k8s_cp_key:
-  #       from_secret: k8s_cp_key
-  #     k8s_nexus_cred:
-  #       from_secret: nexus_cred_base64
-  #   depends_on:
-  #     - build-push-utility
-  #     - build-push-client
-  #   when:
-  #     event:
-  #       - push
-  #     branch:
-  #       - master
+  - name: deploy-prod
+    image: registry.casperinc.net/plugins/ansible:3
+    settings:
+      playbook: ansible/playbook.yml
+      inventory: ansible/inventory/prod
+    environment:
+      k8s_cp_server:
+        from_secret: k8s_cp_server
+      k8s_cp_name:
+        from_secret: k8s_cp_name
+      k8s_cp_user:
+        from_secret: k8s_cp_user
+      k8s_cp_context:
+        from_secret: k8s_cp_context
+      k8s_cp_ca:
+        from_secret: k8s_cp_ca
+      k8s_cp_cert:
+        from_secret: k8s_cp_cert
+      k8s_cp_key:
+        from_secret: k8s_cp_key
+      k8s_nexus_cred:
+        from_secret: nexus_cred_base64
+    depends_on:
+      - build-push-utility
+      - build-push-client
+    when:
+      event:
+        - push
+      branch:
+        - master
 
 volumes:
   - name: dockersock
