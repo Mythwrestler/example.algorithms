@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ utility.application }}
+  namespace: {{ namespace }}
+  labels:
+    app.kubernetes.io/name: {{ utility.application }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ utility.application }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ utility.application }}
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: {{ utility.application }}
+          image: registry.casperinc.net/examples/algorithms/{{ utility.image }}:latest
+          imagePullPolicy: 
+          ports:
+            - containerPort: 80
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ utility.ASPNETCORE_ENVIRONMENT }}
+          resources:
+            limits:
+              memory: "500Mi"
+              cpu: 1
+            requests:
+              memory: "500Mi"
+              cpu: "500m"

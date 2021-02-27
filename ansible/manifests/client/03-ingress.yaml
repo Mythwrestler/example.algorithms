@@ -1,0 +1,26 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ client.application }}
+  namespace: {{ namespace }}
+  labels:
+    app.kubernetes.io/name: {{ client.application }}
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    ingress.kubernetes.io/ssl-passthrough: "false"
+    kubernetes.io/ingress.allow-http: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/rewrite-target: {{ client.ingressRewrite }}
+spec:
+  tls:
+    - hosts:
+        - {{ host }}
+      secretName: {{ client.application }}-certs
+  rules:
+    - host: {{ host }}
+      http:
+        paths:
+          - path: {{ client.ingressPath }}
+            backend:
+              serviceName: {{ client.application }}
+              servicePort: 80

@@ -1,0 +1,7 @@
+---
+- name: Rollout Deploy
+  block:
+    - name: Wait For Application to be deployed
+      shell: "kubectl rollout restart -n {{ namespace }} deployment {{ deployment }} --kubeconfig=.kube/config"
+      register: eks_out
+    - debug: msg="{{ eks_out.stdout_lines }}"

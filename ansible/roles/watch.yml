@@ -1,0 +1,11 @@
+---
+- name: Watch Deployment
+  block:
+    - name: Sleep for 20 seconds and continue with play
+      wait_for:
+        timeout: 20
+      delegate_to: localhost
+    - name: "Wait For Application to be deployed"
+      shell: "kubectl rollout status -n {{ namespace }} deployment {{ deployment }} --kubeconfig=.kube/config"
+      register: eks_out
+    - debug: msg="{{ eks_out.stdout_lines }}"

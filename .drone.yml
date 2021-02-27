@@ -1,0 +1,263 @@
+---
+kind: pipeline
+type: kubernetes
+name: Build-Only
+
+trigger:
+  branch:
+    exclude:
+      - master
+      - dev
+  event:
+    - push
+    - pr
+
+steps:
+  - name: build-only-utility
+    image: registry.casperinc.net/docker:dind
+    commands:
+      # Login to Nexus Registry
+      - mkdir /root/.docker
+      - echo $$NEXUS_CREDS | base64 -d > /root/.docker/config.json
+      - docker login registry.casperinc.net
+      - docker login docker-hosted.casperinc.net
+      - cd example.algorithms.utility/
+      # Build and tag docker image
+      - docker build -t algorithms-utility:latest  .
+    environment:
+      NEXUS_CREDS:
+        from_secret: docker_config
+    volumes:
+      - name: dockersock
+        path: /var/run/
+          
+  - name: build-only-client
+    image: registry.casperinc.net/docker:dind
+    commands:
+      # Login to Nexus Registry
+      - mkdir /root/.docker
+      - echo $$NEXUS_CREDS | base64 -d > /root/.docker/config.json
+      - docker login registry.casperinc.net
+      - docker login docker-hosted.casperinc.net
+      - cd example.algorithms.client/
+      # Build and tag docker image
+      - docker build -t algorithms-client:latest  .
+    environment:
+      NEXUS_CREDS:
+        from_secret: docker_config
+    volumes:
+      - name: dockersock
+        path: /var/run/
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/
+
+image_pull_secrets:
+  - pipeline_image_registry_secrets
+
+
+---
+kind: pipeline
+type: kubernetes
+name: Build-Deploy
+
+trigger:
+  branch:
+    - master
+    - dev
+  event:
+    - push
+
+steps:
+  - name: build-push-utility
+    image: registry.casperinc.net/docker:dind
+    commands:
+      # Login to Nexus Registry
+      - if [ $$BRANCH = "master" ]; then DEPLOY_ENV=prod; else DEPLOY_ENV=dev; fi
+      - echo "$$DEPLOY_ENV"
+      - mkdir /root/.docker
+      - echo $$NEXUS_CREDS | base64 -d > /root/.docker/config.json
+      - docker login registry.casperinc.net
+      - docker login docker-hosted.casperinc.net
+      - cd example.algorithms.utility/
+      # Build Docker Image
+      - docker build -t algorithms-utility-$${DEPLOY_ENV}:$${COMMIT}  .
+      # Tag Docker Image
+      - docker image tag algorithms-utility-$${DEPLOY_ENV}:$${COMMIT} docker-hosted.casperinc.net/examples/algorithms/algorithms-utility-$${DEPLOY_ENV}:latest
+      - docker image tag algorithms-utility-$${DEPLOY_ENV}:$${COMMIT} docker-hosted.casperinc.net/examples/algorithms/algorithms-utility-$${DEPLOY_ENV}:$${COMMIT}
+      # Push Docker Image to Registry
+      - docker image push --all-tags docker-hosted.casperinc.net/examples/algorithms/algorithms-utility-$${DEPLOY_ENV}
+    environment:
+      NEXUS_CREDS:
+        from_secret: docker_config
+      BRANCH: ${DRONE_BRANCH}
+      COMMIT: ${DRONE_COMMIT}
+    volumes:
+      - name: dockersock
+        path: /var/run/
+
+  - name: build-push-client
+    image: registry.casperinc.net/docker:dind
+    commands:
+      # Login to Nexus Registry
+      - if [ $$BRANCH = "master" ]; then DEPLOY_ENV=prod; else DEPLOY_ENV=dev; fi
+      - mkdir /root/.docker
+      - echo $$NEXUS_CREDS | base64 -d > /root/.docker/config.json
+      - docker login registry.casperinc.net
+      - docker login docker-hosted.casperinc.net
+      - cd example.algorithms.client/
+      # Build Docker Image
+      - docker build -t algorithms-client-$${DEPLOY_ENV}:$${COMMIT}  . --build-arg deploy_env=$${DEPLOY_ENV}
+      # Tag Docker Image
+      - docker image tag algorithms-client-$${DEPLOY_ENV}:$${COMMIT} docker-hosted.casperinc.net/examples/algorithms/algorithms-client-$${DEPLOY_ENV}:latest
+      - docker image tag algorithms-client-$${DEPLOY_ENV}:$${COMMIT} docker-hosted.casperinc.net/examples/algorithms/algorithms-client-$${DEPLOY_ENV}:$${COMMIT}
+      # Push Docker Image to Registry
+      - docker image push --all-tags docker-hosted.casperinc.net/examples/algorithms/algorithms-client-$${DEPLOY_ENV}
+    environment:
+      NEXUS_CREDS:
+        from_secret: docker_config
+      BRANCH: ${DRONE_BRANCH}
+      COMMIT: ${DRONE_COMMIT}
+    volumes:
+      - name: dockersock
+        path: /var/run/
+
+  - name: deploy-dev
+    image: registry.casperinc.net/plugins/ansible:3
+    settings:
+      playbook: ansible/playbook.yml
+      inventory: ansible/inventory/dev
+    environment:
+      k8s_cp_server:
+        from_secret: k8s_cp_server
+      k8s_cp_name:
+        from_secret: k8s_cp_name
+      k8s_cp_user:
+        from_secret: k8s_cp_user
+      k8s_cp_context:
+        from_secret: k8s_cp_context
+      k8s_cp_ca:
+        from_secret: k8s_cp_ca
+      k8s_cp_cert:
+        from_secret: k8s_cp_cert
+      k8s_cp_key:
+        from_secret: k8s_cp_key
+      k8s_nexus_cred:
+        from_secret: nexus_cred_base64
+    depends_on:
+      - build-push-utility
+      - build-push-client
+    when:
+      event:
+        - push
+      branch:
+        - master
+
+        
+  # - name: deploy-prod
+  #   image: registry.casperinc.net/plugins/ansible:3
+  #   settings:
+  #     playbook: ansible/playbook.yml
+  #     inventory: ansible/inventory/prod
+  #   environment:
+  #     k8s_cp_server:
+  #       from_secret: k8s_cp_server
+  #     k8s_cp_name:
+  #       from_secret: k8s_cp_name
+  #     k8s_cp_user:
+  #       from_secret: k8s_cp_user
+  #     k8s_cp_context:
+  #       from_secret: k8s_cp_context
+  #     k8s_cp_ca:
+  #       from_secret: k8s_cp_ca
+  #     k8s_cp_cert:
+  #       from_secret: k8s_cp_cert
+  #     k8s_cp_key:
+  #       from_secret: k8s_cp_key
+  #     k8s_nexus_cred:
+  #       from_secret: nexus_cred_base64
+  #   depends_on:
+  #     - build-push-utility
+  #     - build-push-client
+  #   when:
+  #     event:
+  #       - push
+  #     branch:
+  #       - master
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/
+
+image_pull_secrets:
+  - pipeline_image_registry_secrets
+
+
+# Credentials to push built images to registry
+---
+kind: secret
+name: docker_config
+get:
+  path: nexus-credentials
+  name: DOCKERCONFIGASBASE64
+---
+kind: secret
+name: nexus_cred_base64
+get:
+  path: nexus-credentials
+  name: DOCKERCREDSDOUBLE64
+
+# Credentials to pull pipeline images from registry
+---
+kind: secret
+name: pipeline_image_registry_secrets
+get:
+  path: regcred
+  name: .dockerconfigjson
+
+# K8s-Config-Secrets
+---
+kind: secret
+name: k8s_cp_server
+get:
+  path: k8s-credentials
+  name: K8S_CP_SERVER
+---
+kind: secret
+name: k8s_cp_name
+get:
+  path: k8s-credentials
+  name: K8S_CP_NAME
+---
+kind: secret
+name: k8s_cp_user
+get:
+  path: k8s-credentials
+  name: K8S_CP_USER
+---
+kind: secret
+name: k8s_cp_context
+get:
+  path: k8s-credentials
+  name: K8S_CP_CONTEXT
+---
+kind: secret
+name: k8s_cp_ca
+get:
+  path: k8s-credentials
+  name: K8S_CP_CA
+---
+kind: secret
+name: k8s_cp_cert
+get:
+  path: k8s-credentials
+  name: K8S_CP_CERT
+---
+kind: secret
+name: k8s_cp_key
+get:
+  path: k8s-credentials
+  name: K8S_CP_KEY

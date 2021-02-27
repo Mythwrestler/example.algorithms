@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  algorithm-util:
+    build: ./example.algorithms.utility
+    image: algorithms-utility:latest
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "5000:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+  algorithm-client:
+    build: ./example.algorithms.client
+    image: algorithms-client:latest
+    ports:
+      - "5001:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.500'
+          memory: 512M

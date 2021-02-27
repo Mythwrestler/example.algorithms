@@ -1,0 +1,4 @@
+---
+- include_tasks: ../../apply.yml
+  vars:
+    deployment: app

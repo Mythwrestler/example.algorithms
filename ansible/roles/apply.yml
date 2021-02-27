@@ -1,0 +1,33 @@
+---
+- name: Apply Manifests
+  block:
+
+    - name: "Apply Manifests: Create Temporary Manifest Directory"
+      file: path=".tmp/manifests/{{ deployment }}" state=directory mode=0755
+      run_once: true
+      check_mode: no
+
+    - name: "Apply Manifests: Apply transform to manifests"
+      template:
+        src: "./manifests/{{ deployment }}/{{ item.path }}"
+        dest: ".tmp/manifests/{{ deployment }}"
+      with_filetree: ./manifests/{{ deployment }}
+      when: item.state == "file"
+      check_mode: no
+
+    - name: "test"
+      block:
+        - name: "Get List of Manifests"
+          command: "ls -al "
+
+    - name: "Apply Manifests For {{ deployment }}"
+      command: "kubectl apply -f .tmp/manifests/{{ deployment }} --kubeconfig=.kube/config"
+      register: eks_out
+      when:
+        - not ansible_check_mode
+        - local is undefined
+
+    - debug: msg="{{ eks_out.stdout_lines }}"
+      when:
+        - not ansible_check_mode
+        - local is undefined

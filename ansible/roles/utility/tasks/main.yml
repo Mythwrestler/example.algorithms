@@ -1,0 +1,12 @@
+- include_tasks: ../../apply.yml
+  vars:
+    deployment: utility
+
+- include_tasks: ../../deploy.yml
+  vars:
+    deployment: "{{ utility.application }}"
+
+- include_tasks: ../../watch.yml
+  vars:
+    deployment: "{{ utility.application }}"
+

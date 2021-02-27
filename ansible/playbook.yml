@@ -1,0 +1,56 @@
+---
+- name: "Application Deploy"
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  pre_tasks:
+
+    - name: "Create .tmp directory"
+      block:
+        - name: "clean temp directory if exists"
+          file: path=".tmp" state=absent
+          run_once: true
+
+        - name: "create temp directory on local"
+          file: path=".tmp" state=directory mode=0755
+          run_once: true
+
+
+    - name: "Install Kube Configuration"
+      block:
+        - set_fact:
+            k8s_cp_server: "{{ lookup('env', 'k8s_cp_server') }}"
+            k8s_cp_name: "{{ lookup('env', 'k8s_cp_name') }}"
+            k8s_cp_user: "{{ lookup('env', 'k8s_cp_user') }}"
+            k8s_cp_context: "{{ lookup('env', 'k8s_cp_context') }}"
+            k8s_cp_ca: "{{ lookup('env', 'k8s_cp_ca') }}"
+            k8s_cp_cert: "{{ lookup('env', 'k8s_cp_cert') }}"
+            k8s_cp_key: "{{ lookup('env', 'k8s_cp_key') }}"
+
+        - name: "Create .kube directory"
+          file:
+            state: directory
+            path: .kube
+
+        - name: "Build config file"
+          template:
+            src: kubeconfig
+            dest: .kube/config
+          when: local is undefined
+
+
+    - name: "Install Kubectl Binary"
+      block:
+        - name: "Download Binary"
+          get_url:
+            url: https://dl.k8s.io/release/v1.20.0/bin/linux/arm64/kubectl
+            dest: ./kubectl
+
+        - name: "Install Binary"
+          command: "install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl"
+
+  roles:
+    - { role: "app", tags: ["app"] }
+    - { role: "utility", tags: ["utility"] }
+    - { role: "client", tags: ["client"] }

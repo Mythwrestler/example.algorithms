@@ -1,0 +1,17 @@
+---
+namespace: "example-algorithms-dev"
+host: "development.casperinc.net"
+appPath: "/app/algorithms"
+
+client:
+  application: "algorithms-client"
+  image: "algorithms-client-prod"
+  ingressPath: "{{ appPath }}(/|$)(.*)"
+  ingressRewrite: "/$2"
+
+utility:
+  application: "algorithms-utility"
+  image: "algorithms-utility-prod"
+  ingressPath: "{{ appPath }}/api(/|$)(.*)"
+  ingressRewrite: "/api/$2"
+  ASPNETCORE_ENVIRONMENT: "Development"
