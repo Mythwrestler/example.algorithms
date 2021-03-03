@@ -57,13 +57,13 @@ const API = (): APIs => {
     arrayItemCount: number
   ) => {
     return await apiCall<number[]>(
-      `${process.env.PUBLIC_URL}/api/qsort/getrandomarray?maxValue=${maxNumberValue}&arraySize=${arrayItemCount}`,
+      `${process.env.REACT_APP_API_URL}qsort/getrandomarray?maxValue=${maxNumberValue}&arraySize=${arrayItemCount}`,
       "GET"
     );
   };
   const SortIntegerArray = async (arrayToSort: number[]) => {
     return await apiCall<QSortSet>(
-      `${process.env.PUBLIC_URL}/api/qsort/pivotarray`,
+      `${process.env.REACT_APP_API_URL}/qsort/pivotarray`,
       "POST",
       arrayToSort
     );
