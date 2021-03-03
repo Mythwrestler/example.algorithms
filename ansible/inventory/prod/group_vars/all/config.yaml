@@ -1,6 +1,6 @@
 ---
 namespace: "example-algorithms-prod"
-host: "project.casperinc.net"
+host: "projects.casperinc.net"
 appPath: "/app/algorithms"
 
 client:
