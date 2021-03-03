@@ -13,7 +13,7 @@ COPY ./public ./public
 COPY .env.production ./
 
 ARG deploy_env
-RUN if [ "$deploy_env" = "dev" ]; then npm run build-dev; else npm run build; fi
+RUN if [ "$deploy_env" = "dev" ]; then npm run build-dev; else if [ "$deploy_env" = "local"]; then npm run build-local; else npm run build ; fi ; fi
 
 FROM registry.casperinc.net/nginx:alpine
 

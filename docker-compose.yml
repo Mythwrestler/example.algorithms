@@ -13,10 +13,13 @@ services:
           cpus: '1'
           memory: 512M
   algorithm-client:
-    build: ./example.algorithms.client
+    build: 
+      context: ./example.algorithms.client
+      args:
+        deploy_env: local
     image: algorithms-client:latest
     ports:
-      - "5001:80"
+      - "3000:80"
     deploy:
       resources:
         limits:
