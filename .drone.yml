@@ -3,6 +3,7 @@ kind: pipeline
 type: kubernetes
 name: Build-Only
 
+
 trigger:
   branch:
     exclude:
